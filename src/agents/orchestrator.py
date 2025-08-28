@@ -65,13 +65,14 @@ class Orchestrator:
             raise ValueError("complex_question must be a string")
         
         # 重寫問句
-        rewritten_question = self.query_rewriter.rewrite_query(complex_question)
+        rewritten_question = self.query_rewriter.rewrite_query([], complex_question)
         # 計畫執行時需要的工具
-        tools = self.planning_manager.plan_tools(rewritten_question)
+        execution_plan = self.planning_manager.plan_question(rewritten_question)
         # 執行工具
-        results = self.tool_executor.execute_tools(tools)
+        results = self.tool_executor.execute_plan(execution_plan)
+        used_tools = [item.tool_name for item in execution_plan.plan_items]
         # 綜合結果
-        synthesis = self.synthesis_generator.synthesize_result(results)
+        synthesis = self.synthesis_generator.synthesize_result(complex_question, results, used_tools)
         # 回傳結果
         return synthesis
     
@@ -102,15 +103,14 @@ class Orchestrator:
             raise ValueError("complex_question must be a string")
         
         # 重寫問句
-        rewritten_question = self.query_rewriter.rewrite_query(complex_question)
-        # 組合對話歷史
-        combined_history = self.conversation_manager.combine_history(history)
+        rewritten_question = self.query_rewriter.rewrite_query(history or [], complex_question)
         # 計畫執行時需要的工具
-        tools = self.planning_manager.plan_tools(combined_history)
+        execution_plan = self.planning_manager.plan_question(rewritten_question, history)
         # 執行工具
-        results = self.tool_executor.execute_tools(tools)
+        results = self.tool_executor.execute_plan(execution_plan)
+        used_tools = [item.tool_name for item in execution_plan.plan_items]
         # 綜合結果
-        synthesis = self.synthesis_generator.synthesize_result(results)
+        synthesis = self.synthesis_generator.synthesize_with_history(complex_question, results, used_tools)
         return synthesis
     
     def get_reasoning_history(self):

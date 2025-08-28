@@ -114,7 +114,9 @@ class PromptManager:
         只輸出重寫後的問句，不要加任何解釋："""
         return prompt
     
-    def build_synthesis_prompt(self, original_question: str, execution_results: List[str],
+    def build_synthesis_prompt(self, 
+                               original_question: str, 
+                               execution_results: List[str],
                                used_tools: List[str] = None) -> str:
         """
         構建綜合階段的提示詞。
@@ -130,11 +132,13 @@ class PromptManager:
         Examples:
             >>> prompt_manager = PromptManager()
             >>> results = ["台北市晴朗，25°C"]
-            >>> prompt = prompt_manager.build_synthesis_prompt("今天天氣如何？", results, ["weather_tool"])
+            >>> prompt = prompt_manager.build_synthesis_prompt("今天天氣如何？", results)
+            >>> print(prompt)
+            "你是AI助理，負責根據提供的資訊綜合回答使用者問題..."
             
             >>> prompt_manager = PromptManager()# 多工具整合範例
             >>> results = ["高鐵票價700元", "台中晴朗23-28°C"]
-            >>> prompt = prompt_manager.build_synthesis_prompt("台中旅遊規劃", results, ["travel_tool", "weather_tool"])
+            >>> prompt = prompt_manager.build_synthesis_prompt("台中旅遊規劃", results)
         """
         if used_tools is None:
             used_tools = []
