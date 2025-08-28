@@ -1,11 +1,17 @@
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 
-from ...llm.llm_client import LLMConnector # Adjust import path
+from ...llm.llm_client import LLMConnector
+
 
 class ConversationManager:
     """
-    對話管理器，專門處理多輪對話相關的邏輯，包括歷史清理、問題釐清和元對話判斷。
+    對話管理器：專注於對話前處理與路由決策。
+    - 歷史清理（sanitize）
+    - 元對話判斷（is_meta_question）
+    - 問題釐清（clarify_question_with_history）
+    - 元對話處理（handle_meta_conversation）
+    - （為了相容 Orchestrator 介面）推理歷程存取 API
     """
 
     def __init__(self, llm_client: LLMConnector):
@@ -18,6 +24,7 @@ class ConversationManager:
         if not isinstance(llm_client, LLMConnector):
             raise TypeError("llm_client must be an instance of LLMConnector")
         self.llm_client = llm_client
+        self._reasoning_history: List[Dict[str, str]] = []
 
     def sanitize_history(self, history: List[Dict[str, str]], max_items: int = 10) -> List[Dict[str, str]]:
         """
@@ -27,37 +34,57 @@ class ConversationManager:
         - 僅保留最後 max_items 筆
         """
         cleaned: List[Dict[str, str]] = []
-        for m in history:
+        for m in history or []:
             role = str(m.get("role", "")).lower()
             content = str(m.get("content", "")).strip()
             if not content:
                 continue
             role = "user" if role == "user" else "assistant"
             cleaned.append({"role": role, "content": content})
-        if len(cleaned) > 20:
-            cleaned = cleaned[-20:]
+        if len(cleaned) > max_items:
+            cleaned = cleaned[-max_items:]
         return cleaned
+
+    def is_meta_question(self, question: str, history: Optional[List[Dict[str, str]]] = None) -> bool:
+        """
+        判斷是否為元對話（META）。
+        使用輕量關鍵詞判斷，必要時以 LLM 確認。
+        """
+        q = (question or "").strip()
+        if not q:
+            return False
+
+        keywords = [
+            "你是誰", "你的能力", "怎麼使用", "如何使用", "總結對話", "重述",
+            "解釋你的步驟", "為什麼這樣回答", "系統說明", "關於你", "幫我摘要"
+        ]
+        if any(k in q for k in keywords):
+            return True
+
+        prompt = (
+            "請判斷以下問題是否屬於元對話（關於助理/對話/說明/摘要/重述）。\n"
+            "只輸出一個詞：META 或 TASK。\n"
+            f"問題：{q}"
+        )
+        label = (self.llm_client.single_query(prompt) or "").strip().upper()
+        return label.startswith("META")
 
     def clarify_question_with_history(self, question: str, 
                                      history: List[Dict[str, str]]) -> str:
         """
         基於對話歷史，釐清當前問題，使其更具體、適合工具查詢。
+        僅輸出一個最清楚、最具體的一句話。
         """
+        system_instruction = (
+            "請分析使用者的最後問題是否為獨立的新問題，或是延續性問題。"
+            "若為獨立新問題，直接輸出該問題；若為延續性問題，可結合必要脈絡重寫。"
+            "請將使用者的最後問題重寫成一個最清楚、最具體、適合工具查詢的一句話。只輸出那一句話，不要多餘解釋。"
+        )
         clarification_messages: List[Dict[str, str]] = []
-        clarification_messages.extend(history)
+        clarification_messages.append({"role": "system", "content": system_instruction})
+        clarification_messages.extend(history or [])
         clarification_messages.append({"role": "user", "content": question.strip()})
-        clarification_messages.append({
-            "role": "assistant", 
-            "content": """請分析使用者的最後問題是否為獨立的新問題，還是與之前對話相關的延續問題。
-
-            如果是獨立的新問題（如：詢問不同目的地、完全不同的主題），請直接輸出該問題，不要結合歷史資訊。
-
-            如果是延續性問題（如：「那住宿呢？」、「費用大概多少？」），則可以結合脈絡重寫。
-
-            請將使用者的最後問題重寫成一個最清楚、最具體、適合工具查詢的一句話。只輸出那一句話，不要多餘解釋。"""
-        })
-        
-        clarified_question = self.llm_client.generate_chat_response(clarification_messages).strip()
+        clarified_question = (self.llm_client.chat_with_history(clarification_messages) or "").strip()
         return clarified_question or question.strip()
     
     def handle_meta_conversation(self, complex_question: str, history: List[Dict[str, str]]) -> str:
@@ -65,7 +92,17 @@ class ConversationManager:
         處理元對話問題，直接透過 LLM 生成回應。
         """
         meta_messages: List[Dict[str, str]] = []
-        meta_messages.extend(history)
+        meta_messages.extend(history or [])
         meta_messages.append({"role": "user", "content": complex_question.strip()})
-        final_answer = self.llm_client.generate_chat_response(meta_messages)
+        final_answer = (self.llm_client.chat_with_history(meta_messages) or "").strip()
         return final_answer
+
+    # ---- 推理歷程存取：為了相容 Orchestrator 既有介面 ----
+    def record_reasoning_step(self, step_type: str, result: str) -> None:
+        self._reasoning_history.append({"step_type": step_type, "result": result})
+
+    def get_reasoning_history(self) -> List[Dict[str, str]]:
+        return list(self._reasoning_history)
+
+    def clear_reasoning_history(self) -> None:
+        self._reasoning_history.clear()

@@ -47,5 +47,9 @@ class QueryRewriter:
         # 使用 LLM 重寫問句
         rewritten_query = self.llm_client.single_query(prompt)
 
+        # 如果重寫結果是空字串，則返回原始問句
+        if not rewritten_query or rewritten_query.strip() == "":
+            return query
+
         return rewritten_query
         
