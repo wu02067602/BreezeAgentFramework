@@ -12,7 +12,7 @@ class PromptManager:
     專門負責提示詞的組合和管理，提供更清晰的職責分離。
     """
     
-    def __init__(self, config_path: str = "prompts.json"):
+    def __init__(self, config_path: str = "prompt.json"):
         """
         初始化提示詞管理器。
         
