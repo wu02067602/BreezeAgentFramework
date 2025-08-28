@@ -47,4 +47,19 @@ orchestrator = Orchestrator(
     query_rewriter=query_rewriter
 )
 
-print(orchestrator.aquery("請問台灣的總統是誰？"))
+if __name__ == "__main__":
+    print("=== 多輪對話測試（輸入 exit 結束） ===")
+    history = []
+    while True:
+        try:
+            user = input("你: ").strip()
+        except EOFError:
+            break
+        if not user:
+            continue
+        if user.lower() in ("exit", "quit"):
+            break
+        reply = orchestrator.aquery_with_history(user, history)
+        print(f"助理: {reply}")
+        history.append({"role": "user", "content": user})
+        history.append({"role": "assistant", "content": reply})
