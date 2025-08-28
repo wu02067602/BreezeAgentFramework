@@ -47,7 +47,7 @@ class LLMConnector:
         self,
         api_key: str,
         api_base_url: str = "https://api.openai.com/v1",
-        default_model: str = "gpt-3.5-turbo",
+        default_model: str = "gemini-2.5-flash",
         timeout: int = 30,
         max_tokens: int = 1000,
         temperature: float = 0.5,
@@ -61,7 +61,7 @@ class LLMConnector:
         if timeout <= 0:
             raise ValueError("timeout 必須為正整數秒數。")
 
-        self._client: OpenAI = OpenAI(api_key=api_key, base_url=api_base_url.rstrip("/"))
+        self._client: OpenAI = OpenAI(api_key=api_key, base_url=api_base_url)
         self._default_model: str = default_model
         self._timeout: int = timeout
         self._max_tokens: int = max_tokens
