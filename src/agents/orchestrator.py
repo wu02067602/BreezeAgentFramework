@@ -65,9 +65,9 @@ class Orchestrator:
             raise ValueError("complex_question must be a string")
         
         # 重寫問句
-        rewritten_question = self.query_rewriter.rewrite_query([], complex_question)
+        rewritten_question = self.query_rewriter.rewrite_query(history=[], query=complex_question)
         # 計畫執行時需要的工具
-        execution_plan = self.planning_manager.plan_question(rewritten_question)
+        tools = self.planning_manager.plan_question(question=rewritten_question, history=[])
         # 執行工具
         results = self.tool_executor.execute_plan(execution_plan)
         used_tools = [item.tool_name for item in execution_plan.plan_items]
