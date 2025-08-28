@@ -1,22 +1,22 @@
 
 from typing import List, Dict, Any, Optional
 
-from ...llm.llm_client import LLMClient # Adjust import path
+from ...llm.llm_client import LLMConnector # Adjust import path
 
 class ConversationManager:
     """
     對話管理器，專門處理多輪對話相關的邏輯，包括歷史清理、問題釐清和元對話判斷。
     """
 
-    def __init__(self, llm_client: LLMClient):
+    def __init__(self, llm_client: LLMConnector):
         """
         初始化對話管理器。
 
         Args:
             llm_client: LLM 客戶端，用於問題釐清和元對話的回應生成。
         """
-        if not isinstance(llm_client, LLMClient):
-            raise TypeError("llm_client must be an instance of LLMClient")
+        if not isinstance(llm_client, LLMConnector):
+            raise TypeError("llm_client must be an instance of LLMConnector")
         self.llm_client = llm_client
 
     def sanitize_history(self, history: List[Dict[str, str]], max_items: int = 10) -> List[Dict[str, str]]:
