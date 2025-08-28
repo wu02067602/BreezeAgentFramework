@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# 虛擬環境
+.venv/
+venv/
+env/
+
+# 專案產物/封裝
+build/
+dist/
+*.egg-info/
+
+# 測試/工具快取
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 編輯器/系統
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 環境設定與機密
+.env
+.env.*
+# 日誌
+logs/
+*.log
