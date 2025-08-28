@@ -43,7 +43,7 @@ class QueryRewriter:
             "今天的天氣與氣溫適合出門嗎？"
         """
         # 在 prompt_manager 中找到重寫問句的 prompt
-        prompt = self.prompt_manager.get_prompt("query_rewriter", history, query)
+        prompt = self.prompt_manager.build_query_rewriter_prompt(history, query)
         # 使用 LLM 重寫問句
         rewritten_query = self.llm_client.single_query(prompt)
 

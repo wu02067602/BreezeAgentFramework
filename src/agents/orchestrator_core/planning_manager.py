@@ -65,7 +65,7 @@ class PlanningManager:
             )
         
         # 構建規劃提示詞
-        planning_prompt = self.prompt_manager.get_prompt("planning", question, tool_schemas)
+        planning_prompt = self.prompt_manager.build_planning_prompt(question, tool_schemas)
         
         # 構建訊息列表
         messages = [{"role": "system", "content": planning_prompt}]
