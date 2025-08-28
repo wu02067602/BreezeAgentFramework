@@ -47,10 +47,4 @@ orchestrator = Orchestrator(
     query_rewriter=query_rewriter
 )
 
-orchestrator.aquery("請問台灣的總統是誰？")
-
-print(orchestrator.get_reasoning_history())
-
-orchestrator.clear_reasoning_history()
-
-print(orchestrator.get_reasoning_history())
+print(orchestrator.aquery("請問台灣的總統是誰？"))

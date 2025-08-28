@@ -69,8 +69,8 @@ class Orchestrator:
         # 計畫執行時需要的工具
         tools = self.planning_manager.plan_question(question=rewritten_question, history=[])
         # 執行工具
-        results = self.tool_executor.execute_plan(execution_plan)
-        used_tools = [item.tool_name for item in execution_plan.plan_items]
+        results = self.tool_executor.execute_plan(tools)
+        used_tools = [item.tool_name for item in tools.plan_items]
         # 綜合結果
         synthesis = self.synthesis_generator.synthesize_result(complex_question, results, used_tools)
         # 回傳結果
