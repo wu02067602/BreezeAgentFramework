@@ -33,7 +33,10 @@ query_rewriter = QueryRewriter(
 conversation_manager = ConversationManager(
     llm_client=llm_connector
 )
-synthesis_generator = SynthesisGenerator()
+synthesis_generator = SynthesisGenerator(
+    llm_client=llm_connector,
+    prompt_manager=prompt_manager
+)
 
 orchestrator = Orchestrator(
     prompt_manager=prompt_manager,
