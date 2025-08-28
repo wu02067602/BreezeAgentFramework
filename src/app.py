@@ -13,9 +13,9 @@ from src.agents.orchestrator_core.synthesis_generator import SynthesisGenerator
 from src.registry.tool_registry import ToolRegistry
 
 llm_connector = LLMConnector(
-    api_key=os.getenv("LLMApiKey"),
-    api_base_url=os.getenv("LLMUrl"),
-    default_model=os.getenv("ModelName")
+    api_key=os.getenv("LLM_API_KEY"),
+    api_base_url=os.getenv("OPENAI_API_BASE_URL"),
+    default_model=os.getenv("MODEL_NAME")
 )
 prompt_manager = PromptManager()
 planning_manager = PlanningManager(
