@@ -26,15 +26,16 @@ class ConversationManager:
         self.llm_client = llm_client
         self._reasoning_history: List[Dict[str, str]] = []
 
-    def sanitize_history(self, history: List[Dict[str, str]], max_items: int = 10) -> List[Dict[str, str]]:
+    def sanitize_history(self, history: Optional[List[Dict[str, str]]], max_items: int = 10) -> List[Dict[str, str]]:
         """
         清理前端傳入的對話歷史，僅保留必要欄位並限制長度。
         - 僅保留 role in {user, assistant}
         - 轉字串、去除空白；空內容移除
         - 僅保留最後 max_items 筆
         """
+        history = history or []
         cleaned: List[Dict[str, str]] = []
-        for m in history or []:
+        for m in history:
             role = str(m.get("role", "")).lower()
             content = str(m.get("content", "")).strip()
             if not content:
@@ -96,10 +97,6 @@ class ConversationManager:
         meta_messages.append({"role": "user", "content": complex_question.strip()})
         final_answer = (self.llm_client.chat_with_history(meta_messages) or "").strip()
         return final_answer
-
-    # ---- 推理歷程存取：為了相容 Orchestrator 既有介面 ----
-    def record_reasoning_step(self, step_type: str, result: str) -> None:
-        self._reasoning_history.append({"step_type": step_type, "result": result})
 
     def get_reasoning_history(self) -> List[Dict[str, str]]:
         return list(self._reasoning_history)
