@@ -38,22 +38,6 @@ class ConversationManager:
             cleaned = cleaned[-20:]
         return cleaned
 
-    def is_meta_conversation_question(self, text: str) -> bool:
-        """
-        判斷是否為關於對話本身的問題 (元對話)。
-        例如：「我剛剛問了什麼？」
-        """
-        if not isinstance(text, str):
-            return False
-        t = text.strip()
-        if not t:
-            return False
-        keywords = [
-            "剛剛", "剛才", "之前", "前面", "上一題", "上一個", "上面",
-            "我問了什麼", "我剛剛問了什麼", "你剛剛說", "你前面說", "聊了什麼",
-        ]
-        return any(k in t for k in keywords)
-
     def clarify_question_with_history(self, question: str, 
                                      history: List[Dict[str, str]]) -> str:
         """
