@@ -17,7 +17,7 @@ class PromptManager:
         初始化提示詞管理器。
         
         Args:
-            config_path: 提示詞配置檔案的路徑，相對於 src/prompts 目錄。
+            config_path: str, 提示詞配置檔案的路徑，相對於 src/prompts 目錄。
         
         Exceptions:
             FileNotFoundError: 提示詞配置檔案不存在。
@@ -43,8 +43,8 @@ class PromptManager:
         構建規劃階段的提示詞。
         
         Args:
-            question: 使用者問題。
-            tool_schemas: 可用工具的 schema 列表。
+            question: str, 使用者問題。
+            tool_schemas: List[Any], 可用工具的 schema 列表。
             
         Returns:
             str: 規劃提示詞。
@@ -83,8 +83,8 @@ class PromptManager:
         構建查詢重寫的提示詞。
         
         Args:
-            history: 對話歷史。
-            query: 原始查詢。
+            history: List[Dict[str, str]], 對話歷史。
+            query: str, 原始查詢。
             
         Returns:
             str: 查詢重寫提示詞。
@@ -122,9 +122,9 @@ class PromptManager:
         構建綜合階段的提示詞。
         
         Args:
-            original_question: 原始問題。
-            execution_results: 工具執行結果列表。
-            used_tools: 實際執行過的工具名稱列表 (用於組合專業提示詞)。
+            original_question: str, 原始問題。
+            execution_results: List[str], 工具執行結果列表。
+            used_tools: List[str], 實際執行過的工具名稱列表 (用於組合專業提示詞)。
             
         Returns:
             str: 綜合階段提示詞。
@@ -168,7 +168,7 @@ class PromptManager:
         通用提示詞組合專業綜合提示詞。
         
         Args:
-            used_tools: 實際執行過的工具名稱列表
+            used_tools: List[str], 實際執行過的工具名稱列表
             
         Returns:
             str: 組合後的專業提示詞。
@@ -192,7 +192,7 @@ class PromptManager:
         將對話歷史轉換為文字格式。
         
         Args:
-            history: 對話歷史記錄。
+            history: List[Dict[str, str]], 對話歷史記錄。
             
         Returns:
             str: 格式化的對話歷史文字。
