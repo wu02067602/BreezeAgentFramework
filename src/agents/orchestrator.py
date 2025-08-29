@@ -84,8 +84,8 @@ class Orchestrator:
         支援多輪對話歷史的查詢入口。
 
         Args:
-            complex_question: 複雜查詢。
-            history: 對話歷史。
+            complex_question: str, 複雜查詢。
+            history: Optional[List[Dict[str, str]]], 對話歷史。
 
         Returns:
             回答。

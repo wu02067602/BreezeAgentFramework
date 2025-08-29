@@ -12,7 +12,7 @@ class PlanningManager:
     """
     規劃管理器，負責分析問題並制定執行計畫。
     
-    這個類別專門處理複雜查詢的分析和工具選擇邏輯，
+    專門處理複雜查詢的分析和工具選擇邏輯，
     與實際執行解耦，提供清晰的職責分離。
     """
     
@@ -41,11 +41,17 @@ class PlanningManager:
         分析問題並制定執行計畫。
         
         Args:
-            question: 要分析的問題
-            history: 對話歷史記錄
+            question: str, 要分析的問題。
+            history: Optional[List[Dict[str, str]]], 對話歷史記錄。
             
         Returns:
-            ExecutionPlan: 包含工具調用列表的執行計畫
+            ExecutionPlan, 包含工具調用列表的執行計畫。
+            
+        Examples:
+            >>> planning_manager = PlanningManager(llm_client, tool_registry, prompt_manager)
+            >>> plan = planning_manager.plan_question("今天天氣如何？")
+            >>> print(plan.description)
+            "制定了包含 1 個工具調用的執行計畫"
             
         Raises:
             ValueError: 如果問題為空或無效
@@ -99,10 +105,17 @@ class PlanningManager:
         解析 LLM 回應的執行計畫。
         
         Args:
-            result: tool_assisted_query 的回應結果
+            result: Dict[str, Any], tool_assisted_query 的回應結果。
             
         Returns:
-            List[Dict[str, Any]]: 解析後的計畫項目列表
+            List[Dict[str, Any]], 解析後的計畫項目列表。
+            
+        Examples:
+            >>> planning_manager = PlanningManager(llm_client, tool_registry, prompt_manager)
+            >>> result = {"tool_calls": [{"function": {"name": "weather_tool", "arguments": {}}}]}
+            >>> plan_items = planning_manager._parse_execution_plan(result)
+            >>> len(plan_items)
+            1
         """
         plan_items = []
         

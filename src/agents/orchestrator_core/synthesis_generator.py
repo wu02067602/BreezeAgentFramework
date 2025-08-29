@@ -39,9 +39,9 @@ class SynthesisGenerator:
         綜合工具執行結果並生成最終回答。
         
         Args:
-            original_question: 原始使用者問題
-            execution_results: 工具執行結果列表
-            used_tools: 實際執行過的工具名稱列表 (用於組合專業提示詞)。
+            original_question: str, 原始使用者問題
+            execution_results: List[str], 工具執行結果列表
+            used_tools: Optional[List[str]], 實際執行過的工具名稱列表 (用於組合專業提示詞)。
             
         Returns:
             str: 綜合後的最終回答

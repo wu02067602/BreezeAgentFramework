@@ -11,7 +11,6 @@ class ConversationManager:
     - 元對話判斷（is_meta_question）
     - 問題釐清（clarify_question_with_history）
     - 元對話處理（handle_meta_conversation）
-    - （為了相容 Orchestrator 介面）推理歷程存取 API
     """
 
     def __init__(self, llm_client: LLMConnector):
@@ -48,8 +47,21 @@ class ConversationManager:
 
     def is_meta_question(self, question: str, history: Optional[List[Dict[str, str]]] = None) -> bool:
         """
-        判斷是否為元對話（META）。
-        使用輕量關鍵詞判斷，必要時以 LLM 確認。
+        判斷是否為元對話（META）。使用輕量關鍵詞判斷，必要時以 LLM 確認。
+
+        Args:
+            question: str, 使用者問題。
+            history: Optional[List[Dict[str, str]]], 對話歷史。
+
+        Returns:
+            bool, 是否為元對話。
+
+        Examples:
+            >>> conversation_manager = ConversationManager(llm_client)
+            >>> conversation_manager.is_meta_question("你是誰？")
+            True
+            >>> conversation_manager.is_meta_question("推薦好吃的餐廳")
+            True
         """
         q = (question or "").strip()
         if not q:
@@ -77,8 +89,20 @@ class ConversationManager:
     def clarify_question_with_history(self, question: str, 
                                      history: List[Dict[str, str]]) -> str:
         """
-        基於對話歷史，釐清當前問題，使其更具體、適合工具查詢。
-        僅輸出一個最清楚、最具體的一句話。
+        基於對話歷史，釐清當前問題，使其更具體、適合工具查詢。僅輸出一個最清楚、最具體的一句話。
+
+        Args:
+            question: str, 當前問題。
+            history: List[Dict[str, str]], 對話歷史。
+
+        Returns:
+            str, 釐清後的問題。
+
+        Examples:
+            >>> conversation_manager = ConversationManager(llm_client)
+            >>> history = [{"role": "user", "content": "今天天氣如何？"}, {"role": "assistant", "content": "今天天氣晴朗。"}]
+            >>> conversation_manager.clarify_question_with_history("那明天呢？", history)
+            "明天的天氣如何？"
         """
         system_instruction = (
             "請分析使用者的最後問題是否為獨立的新問題，或是延續性問題。"
@@ -95,6 +119,19 @@ class ConversationManager:
     def handle_meta_conversation(self, complex_question: str, history: List[Dict[str, str]]) -> str:
         """
         處理元對話問題，直接透過 LLM 生成回應。
+
+        Args:
+            complex_question: str, 複雜問題。
+            history: List[Dict[str, str]], 對話歷史。
+
+        Returns:
+            str, LLM 生成的回應。
+
+        Examples:
+            >>> conversation_manager = ConversationManager(llm_client)
+            >>> history = [{"role": "user", "content": "你好"}]
+            >>> conversation_manager.handle_meta_conversation("你是誰？", history)
+            "我是AI助理，很高興為您服務。"
         """
         meta_messages: List[Dict[str, str]] = []
         meta_messages.extend(history or [])
