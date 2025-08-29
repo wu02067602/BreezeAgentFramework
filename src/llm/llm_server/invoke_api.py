@@ -2,10 +2,18 @@ from openai import OpenAI
 from mtkresearch.llm.prompt import MRPromptV3
 
 # --- 1. 初始化 OpenAI 客戶端，指向您的本地服務 ---
+
+# 如果你選擇ollama部署
 client = OpenAI(
-    base_url="http://localhost:6667/v1",
-    api_key="token-abc123",
+    base_url="http://localhost:11434/v1",
+    api_key="ollama",
 )
+
+# 如果你選擇vllm部署
+# client = OpenAI(
+#     base_url="http://localhost:6667/v1",
+#     api_key="token-abc123",
+# )
 
 # --- 2. 準備對話內容 (與 client.chat.completions.create 的 messages 格式相同) ---
 conversations = [
@@ -26,7 +34,7 @@ print("------------------------------------------\n")
 # --- 4. 呼叫 /v1/completions API ---
 # 使用 client.completions.create 並傳入格式化後的 final_prompt
 completion = client.completions.create(
-  model="./Llama-Breeze2-8B-Instruct-text-only",
+  model="willqiu/Llama-Breeze2-8B-Instruct",  # 如果你選擇vllm部署 這行改成"./Llama-Breeze2-8B-Instruct-text-only"
   prompt=final_prompt,
   max_tokens=1024,     
   temperature=0.01,      
