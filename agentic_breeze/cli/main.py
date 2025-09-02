@@ -22,7 +22,7 @@ def create_orchestrator():
     """Create and configure the Agentic Breeze orchestrator"""
     llm_connector = LLMConnector(
         host_type=os.getenv("HOST_TYPE", "ollama"),
-        timeout=int(os.getenv("TIMEOUT", "30")),
+        timeout=int(os.getenv("TIMEOUT", "300")),
         max_tokens=int(os.getenv("MAX_TOKENS", "1000")),
         temperature=float(os.getenv("TEMPERATURE", "0.5"))
     )

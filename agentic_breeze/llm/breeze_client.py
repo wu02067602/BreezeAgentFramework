@@ -114,7 +114,7 @@ class BreezeClient:
         if host_type == 'ollama':
             base_url = "http://localhost:11434/v1"
             api_key = "ollama"
-            self._model = 'willqiu/Llama-Breeze2-8B-Instruct'
+            self._model = 'ycchen/Breeze2-8B-TextOnly-Q4_K_M-NoTemplate'
         elif host_type == 'vllm':
             base_url = "http://localhost:6667/v1"
             api_key = "token-abc123"
@@ -138,9 +138,6 @@ class BreezeClient:
         tools=None,
         timeout=None,
     ):
-        if stream:
-            raise NotImplementedError("Streaming is not supported")
-
         if model is None:
             model = self._model
         
@@ -242,9 +239,7 @@ class BreezeClient:
         
         # Get generated text
         generated_text = completion.choices[0].text.strip()
-        print(completion_params['prompt'])
-        print(generated_text)
-        
+
         # Estimate completion tokens
         completion_tokens = self._estimate_tokens(generated_text)
         
