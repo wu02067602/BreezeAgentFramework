@@ -72,4 +72,42 @@ class SynthesisGenerator:
         
         final_answer = self.llm_client.single_query(synthesis_prompt)
         return final_answer
+
+    def synthesize_result_stream(self, 
+                                original_question: str,
+                                execution_results: List[str],
+                                used_tools: Optional[List[str]] = None):
+        """
+        綜合工具執行結果並生成串流回答。
+        
+        Args:
+            original_question: str, 原始使用者問題
+            execution_results: List[str], 工具執行結果列表
+            used_tools: Optional[List[str]], 實際執行過的工具名稱列表 (用於組合專業提示詞)。
+            
+        Yields:
+            串流回應內容
+            
+        Raises:
+            ValueError: 如果問題為空或結果列表為空
+            RuntimeError: 如果綜合過程出現錯誤
+        """
+        if not isinstance(original_question, str) or not original_question.strip():
+            raise ValueError("original_question must be a non-empty string")
+        
+        if not isinstance(execution_results, list):
+            raise ValueError("execution_results must be a list")
+        
+        # 建構綜合提示詞
+        synthesis_prompt = self.prompt_manager.build_synthesis_prompt(
+            original_question=original_question,
+            execution_results=execution_results,
+            used_tools=used_tools
+        )
+        
+        # 使用串流方法
+        stream = self.llm_client.single_query_stream(synthesis_prompt)
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
             

@@ -77,9 +77,23 @@ def run_web_interface():
                 formatted_history.append({"role": "user", "content": human})
                 formatted_history.append({"role": "assistant", "content": assistant})
 
-            reply = orchestrator.aquery_with_history(user_message, formatted_history)
-            
-            return reply
+            # Try streaming first, fallback to non-streaming
+            try:
+                full_reply = ""
+                for chunk in orchestrator.aquery_with_history_stream(user_message, formatted_history):
+                    if chunk:
+                        full_reply += chunk
+                        # Yield partial response for streaming effect
+                        yield full_reply
+                
+                # Final yield with complete response
+                yield full_reply
+                
+            except Exception as e:
+                # Fallback to non-streaming
+                print(f"Web streaming failed, using non-streaming mode: {e}")
+                reply = orchestrator.aquery_with_history(user_message, formatted_history)
+                yield reply
 
         print("=== 啟動 Gradio 介面 ===")
         
@@ -123,14 +137,25 @@ def run_chat():
                 if not user_input:
                     continue
                 
-                # Get response from orchestrator
-                reply = orchestrator.aquery_with_history(user_input, history)
+                # Get streaming response from orchestrator
+                print(f"\nAgentic Breeze: ", end="", flush=True)
+                full_reply = ""
                 
-                print(f"\nAgentic Breeze: {reply}")
+                try:
+                    for chunk in orchestrator.aquery_with_history_stream(user_input, history):
+                        if chunk:
+                            print(chunk, end="", flush=True)
+                            full_reply += chunk
+                    print()  # New line after streaming complete
+                except Exception as e:
+                    # Fallback to non-streaming if streaming fails
+                    print(f"串流模式失敗，切換至一般模式: {e}")
+                    full_reply = orchestrator.aquery_with_history(user_input, history)
+                    print(full_reply)
                 
                 # Update history
                 history.append({"role": "user", "content": user_input})
-                history.append({"role": "assistant", "content": reply})
+                history.append({"role": "assistant", "content": full_reply})
                 
             except KeyboardInterrupt:
                 print("\n\n再見！")

@@ -67,15 +67,17 @@ class ConversationManager:
         if not q:
             return False
 
-        keywords = [
+        # 元對話關鍵詞檢測
+        meta_keywords = [
             "你是誰", "你的能力", "怎麼使用", "如何使用", "總結對話", "重述",
             "解釋你的步驟", "為什麼這樣回答", "系統說明", "關於你", "幫我摘要",
+            "你好", "hi", "hello"
         ]
-        if any(k in q for k in keywords):
+        if any(k in q for k in meta_keywords):
             return True
     
-    # 如果沒有工具可用，所有問題都歸類為元對話直接回答
-        return True
+        # 只有明確的元對話才歸類為META，其他問題走正常流程
+        return False
         
         # 註解：原本的 LLM 判斷邏輯
         # prompt = (

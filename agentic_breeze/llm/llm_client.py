@@ -233,3 +233,79 @@ class LLMConnector:
             raw = {"id": getattr(resp, "id", None), "object": getattr(resp, "object", None)}
 
         return {"content": content, "tool_calls": tool_calls, "raw": raw}
+
+    def single_query_stream(
+        self,
+        prompt: str,
+        *,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        system_prompt: Optional[str] = None,
+    ):
+        """單次對答串流版本：使用單一使用者提示詞呼叫模型並回傳串流結果。
+
+        Args:
+            prompt (str): 使用者提示內容，不可為空。
+            model (Optional[str]): 模型名稱；預設使用初始化的 `default_model`。
+            max_tokens (Optional[int]): 限制生成的最大 token 數量；可不填由伺服器預設。
+            temperature (Optional[float]): 取樣溫度；可不填由伺服器預設。
+            system_prompt (Optional[str]): 系統提示，可用來規範助手行為。
+
+        Yields:
+            串流 chunk 物件，包含逐步生成的內容。
+        """
+        if not prompt or not isinstance(prompt, str):
+            raise ValueError("prompt 不可為空，且需為字串。")
+        if max_tokens is not None and max_tokens <= 0:
+            raise ValueError("max_tokens 必須為正整數。")
+
+        messages: List[Dict[str, str]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        stream = self._client.chat_completions_create(
+            model=model or self._default_model,
+            messages=messages,
+            max_tokens=max_tokens or self._max_tokens,
+            temperature=temperature or self._temperature,
+            timeout=self._timeout,
+            stream=True,
+        )
+        
+        return stream
+
+    def chat_with_history_stream(
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ):
+        """歷史訊息對答串流版本：以既有 `messages` 呼叫模型並回傳串流結果。
+
+        Args:
+            messages (List[Dict[str, str]]): 對話歷史，需符合 OpenAI Chat 格式。
+            model (Optional[str]): 模型名稱；預設使用初始化的 `default_model`。
+            max_tokens (Optional[int]): 限制生成的最大 token 數量；可不填由伺服器預設。
+            temperature (Optional[float]): 取樣溫度；可不填由伺服器預設。
+
+        Yields:
+            串流 chunk 物件，包含逐步生成的內容。
+        """
+        if not messages or not isinstance(messages, list):
+            raise ValueError("messages 不可為空，且需為列表。")
+
+        params: Dict[str, Any] = {
+            "model": model or self._default_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "timeout": self._timeout,
+            "stream": True,
+        }
+        
+        stream = self._client.chat_completions_create(**{k: v for k, v in params.items() if v is not None})
+        return stream

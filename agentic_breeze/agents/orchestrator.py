@@ -143,3 +143,48 @@ class Orchestrator:
             None
         """
         self.conversation_manager.clear_reasoning_history()
+
+    def aquery_with_history_stream(self, 
+                                   complex_question: str, 
+                                   history: Optional[List[Dict[str, str]]] = None):
+        """
+        支援多輪對話歷史的串流查詢入口。
+
+        Args:
+            complex_question: str, 複雜查詢。
+            history: Optional[List[Dict[str, str]]], 對話歷史。
+
+        Yields:
+            串流回應內容。
+        """
+        if not isinstance(complex_question, str):
+            raise ValueError("complex_question must be a string")
+        
+        # 歷史清理（避免前端傳入雜訊）
+        sanitized_history = self.conversation_manager.sanitize_history(history or [], max_items=20)
+
+        # 若為元對話，直接路由處理（不支援串流）
+        if self.conversation_manager.is_meta_question(complex_question, sanitized_history):
+            yield self.conversation_manager.handle_meta_conversation(complex_question, sanitized_history)
+            return
+
+        # 一般任務流程：重寫問句 → 規劃
+        yield "🔄 正在分析您的問題..."
+        rewritten_question = self.query_rewriter.rewrite_query(sanitized_history, complex_question)
+        
+        yield " 完成\n🔄 正在制定執行計畫..."
+        execution_plan = self.planning_manager.plan_question(rewritten_question, sanitized_history)
+        
+        # 執行工具
+        if execution_plan.plan_items:
+            yield " 完成\n🔄 正在執行相關工具..."
+            results = self.tool_executor.execute_plan(execution_plan)
+            used_tools = [item.tool_name for item in execution_plan.plan_items]
+            yield " 完成\n\n"
+        else:
+            results = []
+            used_tools = []
+            yield " 完成\n\n"
+        
+        # 綜合結果（串流版本）
+        yield from self.synthesis_generator.synthesize_result_stream(complex_question, results, used_tools)
