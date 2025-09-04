@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Callable
 import json
 from src.agents.orchestrator_core.tools.sqlite_tool import SQLiteSchemaTool
 from src.agents.orchestrator_core.tools.weather import CWAWeatherTool
+from src.agents.orchestrator_core.tools.wiki_tool import WikiTool
 from src.agents.orchestrator_core.tools.api_tool import APIRequestTool
 
 # 錯誤訊息前綴，提供一致且可辨識的錯誤格式。
@@ -101,6 +102,7 @@ class ToolRegistry:
         # -------------------- 註冊 API ---------------------
         api_request_tool_instance = APIRequestTool() 
         cwa_weather_tool_instance = CWAWeatherTool(api_request_tool=api_request_tool_instance)
+        wiki_tool_instance = WikiTool(api_request_tool=api_request_tool_instance)
 
         # define_table (僅用於遷移現有表，不創建新表)
         column_definition_schema = {
@@ -196,6 +198,22 @@ class ToolRegistry:
                 "additionalProperties": False,
             },
             handler=cwa_weather_tool_instance.get_national_forecast,
+        )
+
+        # smart_content
+        self.register_tool(
+            name="wiki_smart_content",
+            description="根據關鍵字搜尋 Wikipedia，並回傳最佳匹配頁面的標題、URL 和解說。",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "要在 Wikipedia 上搜尋的關鍵字或短語。"},
+                    "limit": {"type": "integer", "description": "要回傳的搜尋結果數量。預設為 2。", "default": 2, "minimum": 1, "maximum": 10}
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+            handler=wiki_tool_instance.smart_content,
         )
 
     def register_tool(

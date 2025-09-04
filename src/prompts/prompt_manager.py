@@ -162,7 +162,7 @@ class PromptManager:
         背景資料：
         {results_text}
 
-        請根據以上背景資料，生成一個完整、準確的答案。
+        請根據以上背景資料，生成一個完整的回答。
         """
     
     def _compose_expert_synthesis_prompt(self, used_tools: List[str]) -> str:
