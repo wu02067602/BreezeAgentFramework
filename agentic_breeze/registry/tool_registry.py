@@ -185,12 +185,12 @@ class ToolRegistry:
         # get_national_forecast
         self.register_tool(
             name="cwa_get_national_forecast",
-            description="獲取中央氣象署 (CWA) 的全國天氣預報資料，可選擇篩選特定地點。",
+            description="獲取台灣的氣象資訊。資訊來源於中央氣象署 (CWA) 的全國天氣預報資料，可選擇篩選特定地點。",
             parameters={
                 "type": "object",
                 "properties": {
                     "dataset_id": {"type": "string", "description": "CWA 資料集的 ID，預設為 'F-C0032-001' (36 小時天氣預報)。", "default": "F-C0032-001"},
-                    "location_name": {"type": "string", "description": "可選的地點名稱，如果提供，將只回傳該地點的預報。"}
+                    "location_name": {"type": "string", "description": "可選的台灣城市名稱，盡可能簡單表示，如果提供，將只回傳該地點的預報。"}
                 },
                 "required": [],
                 "additionalProperties": False,

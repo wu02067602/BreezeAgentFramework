@@ -124,7 +124,26 @@ class PlanningManager:
         tool_calls = result.get("tool_calls")
         if tool_calls and isinstance(tool_calls, list):
             for tool_call in tool_calls:
-                if hasattr(tool_call, 'function'):
+                # 處理字典格式的 tool_call
+                if isinstance(tool_call, dict):
+                    function_info = tool_call.get('function')
+                    if function_info:
+                        try:
+                            # 檢查參數是否為字串需要解析，還是已經是字典
+                            arguments = function_info.get('arguments', {})
+                            if isinstance(arguments, str):
+                                arguments = json.loads(arguments)
+                            elif not isinstance(arguments, dict):
+                                arguments = {}
+                        except (json.JSONDecodeError, TypeError):
+                            arguments = {}
+                        
+                        plan_items.append(PlanItem(
+                            tool_name=function_info.get('name'),
+                            arguments=arguments
+                        ))
+                # 處理對象格式的 tool_call（保持向後兼容）
+                elif hasattr(tool_call, 'function'):
                     try:
                         # 解析 JSON 字串為字典
                         arguments = json.loads(tool_call.function.arguments)
