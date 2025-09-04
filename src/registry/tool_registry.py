@@ -1,5 +1,8 @@
 from typing import List, Dict, Any, Callable
 import json
+from src.agents.orchestrator_core.tools.sqlite_tool import SQLiteSchemaTool
+from src.agents.orchestrator_core.tools.weather import CWAWeatherTool
+from src.agents.orchestrator_core.tools.api_tool import APIRequestTool
 
 # 錯誤訊息前綴，提供一致且可辨識的錯誤格式。
 ERROR_PREFIX = "[ToolError]"
@@ -81,7 +84,119 @@ class ToolRegistry:
     """
 
     def __init__(self) -> None:
+        """
+        初始化工具註冊表。
+        """
         self._registry: Dict[str, Dict[str, Any]] = {}
+        self._register_default_tools() # 呼叫註冊預設工具
+        
+
+    def _register_default_tools(self) -> None:
+        """
+        註冊預設工具，例如 SQLiteSchemaTool。
+        """
+        # -------------------- 註冊 SQLiteSchemaTool ---------------------
+        sqlite_tool_instance = SQLiteSchemaTool(db_path="sample_users.db")
+
+        # -------------------- 註冊 API ---------------------
+        api_request_tool_instance = APIRequestTool() 
+        cwa_weather_tool_instance = CWAWeatherTool(api_request_tool=api_request_tool_instance)
+
+        # define_table (僅用於遷移現有表，不創建新表)
+        column_definition_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "欄位名稱。"},
+                "dtype": {"type": "string", "enum": ["TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"], "description": "SQLite 資料型別。"},
+                "nullable": {"type": "boolean", "description": "是否允許 NULL 值。預設為 True。"},
+                "is_primary_key": {"type": "boolean", "description": "是否為主鍵。預設為 False。"},
+                "is_unique": {"type": "boolean", "description": "是否為唯一約束。預設為 False。"},
+                "default": {"type": "string", "description": "欄位的預設值。"},
+                "description": {"type": "string", "description": "欄位的描述。"},
+            },
+            "required": ["name", "dtype"],
+            "additionalProperties": False,
+        }
+
+        table_definition_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "資料表名稱。"},
+                "columns": {
+                    "type": "array",
+                    "items": column_definition_schema,
+                    "description": "ColumnDefinition 物件列表，定義資料表的欄位。"
+                },
+                "description": {"type": "string", "description": "資料表的描述。"},
+            },
+            "required": ["name", "columns"],
+            "additionalProperties": False,
+        }
+
+        self.register_tool(
+            name="sqlite_define_table",
+            description="根據 dataclass 定義的 schema 遷移現有資料表。此工具不允許創建新表，只會對已存在的表追加欄位。",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "table_definition": table_definition_schema
+                },
+                "required": ["table_definition"],
+                "additionalProperties": False,
+            },
+            handler=sqlite_tool_instance.define_table,
+        )
+
+        # query_to_dicts
+        self.register_tool(
+            name="sqlite_query_to_dicts",
+            description="執行 SELECT 語句並回傳結果為字典列表。",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "sql_query": {"type": "string", "description": "要執行的 SELECT SQL 查詢字串。"},
+                    "params": {
+                        "type": "array",
+                        "description": "SQL 查詢的參數，可以是列表、元組或物件。",
+                        "items": {"type": "object"}
+                    }
+                },
+                "required": ["sql_query"],
+                "additionalProperties": False,
+            },
+            handler=sqlite_tool_instance.query_to_dicts,
+        )
+
+        # get_table_info
+        self.register_tool(
+            name="sqlite_get_table_info",
+            description="獲取指定資料表的詳細資訊，包括欄位、型別等。",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "table_name": {"type": "string", "description": "要獲取資訊的資料表名稱。"}
+                },
+                "required": ["table_name"],
+                "additionalProperties": False,
+            },
+            handler=sqlite_tool_instance.get_table_info,
+        )
+
+        # get_national_forecast
+        self.register_tool(
+            name="cwa_get_national_forecast",
+            description="獲取中央氣象署 (CWA) 的全國天氣預報資料，可選擇篩選特定地點。",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "dataset_id": {"type": "string", "description": "CWA 資料集的 ID，預設為 'F-C0032-001' (36 小時天氣預報)。", "default": "F-C0032-001"},
+                    "location_name": {"type": "string", "description": "可選的地點名稱，如果提供，將只回傳該地點的預報。"}
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+            handler=cwa_weather_tool_instance.get_national_forecast,
+        )
 
     def register_tool(
         self,

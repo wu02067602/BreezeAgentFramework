@@ -74,17 +74,17 @@ class ConversationManager:
         if any(k in q for k in keywords):
             return True
     
-    # 如果沒有工具可用，所有問題都歸類為元對話直接回答
-        return True
+        # 如果沒有工具可用，所有問題都歸類為元對話直接回答
+        # return True
         
         # 註解：原本的 LLM 判斷邏輯
-        # prompt = (
-        #     "請判斷以下問題是否屬於元對話（關於助理/對話/說明/摘要/重述）。\n"
-        #     "只輸出一個詞：META 或 TASK。\n"
-        #     f"問題：{q}"
-        # )
-        # label = (self.llm_client.single_query(prompt) or "").strip().upper()
-        # return label.startswith("META")
+        prompt = (
+            "請判斷以下問題是否屬於元對話（關於助理/對話/說明/摘要/重述）。\n"
+            "只輸出一個詞：META 或 TASK。\n"
+            f"問題：{q}"
+        )
+        label = (self.llm_client.single_query(prompt) or "").strip().upper()
+        return label.startswith("META")
 
     def clarify_question_with_history(self, question: str, 
                                      history: List[Dict[str, str]]) -> str:
