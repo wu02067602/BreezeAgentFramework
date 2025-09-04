@@ -1,5 +1,6 @@
 
 from typing import List, Dict, Any, Optional
+import json
 
 from ...llm.llm_client import LLMConnector
 from ...registry.tool_registry import ToolRegistry
@@ -124,9 +125,16 @@ class PlanningManager:
         if tool_calls and isinstance(tool_calls, list):
             for tool_call in tool_calls:
                 if hasattr(tool_call, 'function'):
+                    try:
+                        # 解析 JSON 字串為字典
+                        arguments = json.loads(tool_call.function.arguments)
+                    except json.JSONDecodeError:
+                        # 如果解析失敗，則參數為空字典
+                        arguments = {}
+                    
                     plan_items.append(PlanItem(
                         tool_name=tool_call.function.name,
-                        arguments=tool_call.function.arguments
+                        arguments=arguments
                     ))
         
         return plan_items

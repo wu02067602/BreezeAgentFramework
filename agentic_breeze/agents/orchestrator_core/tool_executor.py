@@ -83,4 +83,4 @@ class ToolExecutor:
         result = self.tool_registry.execute_tool(tool_name, **parameters)
         print(f"工具 {index+1} 執行結果: {str(result)[:100]}...")
         
-        return str(result)
+        return result
