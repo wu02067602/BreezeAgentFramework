@@ -56,7 +56,7 @@ class PromptManager:
             "你是AI助理，負責分析使用者問題並選擇最合適的工具組合..."
         """
         tools_description = "\n".join([
-            f"- {schema.to_dict()['name']}: {schema.to_dict()['description']}"
+            f"- {schema['function']['name']}: {schema['function']['description']}"
             for schema in tool_schemas
         ])
 
@@ -69,7 +69,9 @@ class PromptManager:
         === 使用者問題 ===
         {question}
 
-        如果需要多個工具，使用 planner： 
+        === 工具呼叫規則 ===
+        依據使用者問題判斷，如果需要調用多個工具，使用 planner規劃方式，planner非工具名稱，而是會回傳一個包含工具名稱和參數的列表： 
+        
         planner(plan=[
             {{"tool_name": "第1個工具", "parameters": {{參數}}}},
             {{"tool_name": "第2個工具", "parameters": {{參數}}}}
