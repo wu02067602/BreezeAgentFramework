@@ -67,26 +67,24 @@ class ConversationManager:
         if not q:
             return False
 
-        # 元對話關鍵詞檢測
-        meta_keywords = [
+        keywords = [
             "你是誰", "你的能力", "怎麼使用", "如何使用", "總結對話", "重述",
             "解釋你的步驟", "為什麼這樣回答", "系統說明", "關於你", "幫我摘要",
-            "你好", "hi", "hello"
         ]
-        if any(k in q for k in meta_keywords):
+        if any(k in q for k in keywords):
             return True
     
-        # 只有明確的元對話才歸類為META，其他問題走正常流程
-        return False
+        # 如果沒有工具可用，所有問題都歸類為元對話直接回答
+        # return True
         
         # 註解：原本的 LLM 判斷邏輯
-        # prompt = (
-        #     "請判斷以下問題是否屬於元對話（關於助理/對話/說明/摘要/重述）。\n"
-        #     "只輸出一個詞：META 或 TASK。\n"
-        #     f"問題：{q}"
-        # )
-        # label = (self.llm_client.single_query(prompt) or "").strip().upper()
-        # return label.startswith("META")
+        prompt = (
+            "請判斷以下問題是否屬於元對話（關於助理/對話/說明/摘要/重述）。\n"
+            "只輸出一個詞：META 或 TASK。\n"
+            f"問題：{q}"
+        )
+        label = (self.llm_client.single_query(prompt) or "").strip().upper()
+        return label.startswith("META")
 
     def clarify_question_with_history(self, question: str, 
                                      history: List[Dict[str, str]]) -> str:
