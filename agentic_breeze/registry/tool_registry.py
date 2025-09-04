@@ -190,7 +190,7 @@ class ToolRegistry:
                 "type": "object",
                 "properties": {
                     "dataset_id": {"type": "string", "description": "CWA 資料集的 ID，預設為 'F-C0032-001' (36 小時天氣預報)。", "default": "F-C0032-001"},
-                    "location_name": {"type": "string", "description": "可選的台灣城市名稱，盡可能簡單表示，如果提供，將只回傳該地點的預報。"}
+                    "location_name": {"type": "string", "description": "可選的台灣城市名稱，盡可能簡單表示，如果提供，將只回傳該地點的預報。請使用標準中文行政區劃名稱，例如：臺北市、臺南市、高雄市、新北市、桃園市、台中市、台南市、台東市、花蓮縣、宜蘭縣、金門縣、連江縣、澎湖縣。"}
                 },
                 "required": [],
                 "additionalProperties": False,
