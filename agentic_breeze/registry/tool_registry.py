@@ -1,8 +1,8 @@
 from typing import List, Dict, Any, Callable
 import json
-from src.agents.orchestrator_core.tools.sqlite_tool import SQLiteSchemaTool
-from src.agents.orchestrator_core.tools.weather import CWAWeatherTool
-from src.agents.orchestrator_core.tools.api_tool import APIRequestTool
+from agentic_breeze.agents.orchestrator_core.tools.sqlite_tool import SQLiteSchemaTool
+from agentic_breeze.agents.orchestrator_core.tools.weather import CWAWeatherTool
+from agentic_breeze.agents.orchestrator_core.tools.api_tool import APIRequestTool
 
 # 錯誤訊息前綴，提供一致且可辨識的錯誤格式。
 ERROR_PREFIX = "[ToolError]"
