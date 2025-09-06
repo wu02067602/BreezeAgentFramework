@@ -10,9 +10,9 @@ class WikiSearchParams(BaseModel):
     limit: int = Field(10, description="要回傳的搜尋結果數量。預設為 10。", ge=1, le=50)
 
 class WikiSmartContentParams(BaseModel):
-    """Wikipedia 智慧摘要工具的參數"""
+    """Wikipedia 智慧內容工具的參數"""
     query: str = Field(..., description="要搜尋並獲取摘要的關鍵字或短語。")
-    limit: int = Field(5, description="搜尋時的結果數量限制。預設為 5。", ge=1, le=10)
+    limit: int = Field(2, description="搜尋時的結果數量限制。預設為 2。", ge=1, le=10)
 
 class WikiTool:
     """
@@ -159,7 +159,7 @@ class WikiTool:
         # --- 添加除錯輸出 --- start
         search_results = json.loads(s)
         if search_results.get("status") == "success":
-            print(f"[DEBUG] wiki_smart_content 搜尋到的標題: {search_results.get("titles", [])}")
+            print(f"[DEBUG] wiki_smart_content 搜尋到的標題: {search_results.get('titles', [])}")
         # --- 添加除錯輸出 --- end
         if json.loads(s).get("status") != "success":
             return s
@@ -184,6 +184,6 @@ class WikiTool:
             })
         
         if not all_contents:
-            return json.dumps({"status": "error", "message": f"無法為 {query} 獲取任何有效摘要。"})
+            return json.dumps({"status": "error", "message": f"無法為 {query} 獲取任何有效內容。"})
 
         return json.dumps({"status": "success", "results": all_contents})
