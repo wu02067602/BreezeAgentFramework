@@ -206,7 +206,7 @@ class ToolRegistry:
         # smart_content
         self.register_tool(
             name="wiki_smart_content",
-            description="根據關鍵字搜尋 Wikipedia，並回傳最佳匹配頁面的標題、URL 和解說。",
+            description="需要查詢知識時，根據關鍵字搜尋 Wikipedia，並回傳最佳匹配頁面的標題、URL 和解說。",
             parameters={
                 "type": "object",
                 "properties": {
