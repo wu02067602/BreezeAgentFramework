@@ -70,7 +70,7 @@ class PromptManager:
         {question}
 
         === 工具呼叫規則 ===
-        依據使用者問題判斷，如果需要調用多個工具，使用 planner規劃方式，planner非工具名稱，而是會回傳一個包含工具名稱和參數的列表： 
+        依據使用者問題判斷，如果需要調用多個工具，使用 planner規劃方式，回傳一個包含多個工具名稱和參數的列表，格式如下：
         
         planner(plan=[
             {{"tool_name": "第1個工具", "parameters": {{參數}}}},

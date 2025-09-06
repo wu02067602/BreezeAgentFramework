@@ -4,6 +4,7 @@ from src.agents.orchestrator_core.tools.sqlite_tool import SQLiteSchemaTool
 from src.agents.orchestrator_core.tools.weather import CWAWeatherTool
 from src.agents.orchestrator_core.tools.wiki_tool import WikiTool
 from src.agents.orchestrator_core.tools.api_tool import APIRequestTool
+from src.agents.orchestrator_core.tools.plan_tool import PlannerTool
 
 # 錯誤訊息前綴，提供一致且可辨識的錯誤格式。
 ERROR_PREFIX = "[ToolError]"
@@ -103,6 +104,7 @@ class ToolRegistry:
         api_request_tool_instance = APIRequestTool() 
         cwa_weather_tool_instance = CWAWeatherTool(api_request_tool=api_request_tool_instance)
         wiki_tool_instance = WikiTool(api_request_tool=api_request_tool_instance)
+        planner_tool_instance = PlannerTool()
 
         # define_table (僅用於遷移現有表，不創建新表)
         column_definition_schema = {
@@ -135,6 +137,7 @@ class ToolRegistry:
             "additionalProperties": False,
         }
 
+        # sqlite_define_table
         self.register_tool(
             name="sqlite_define_table",
             description="根據 dataclass 定義的 schema 遷移現有資料表。此工具不允許創建新表，只會對已存在的表追加欄位。",
@@ -214,6 +217,13 @@ class ToolRegistry:
                 "additionalProperties": False,
             },
             handler=wiki_tool_instance.smart_content,
+        )
+        # planner
+        self.register_tool(
+            name="planner",
+            description="多工具規劃器，用於同時調用多個工具以提供綜合性的回答。適用於需要多種資訊的複合查詢。",
+            parameters=planner_tool_instance.args_schema,
+            handler=planner_tool_instance.run,
         )
 
     def register_tool(

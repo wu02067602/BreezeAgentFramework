@@ -131,11 +131,24 @@ class PlanningManager:
                     except json.JSONDecodeError:
                         # 如果解析失敗，則參數為空字典
                         arguments = {}
-                    
-                    plan_items.append(PlanItem(
-                        tool_name=tool_call.function.name,
-                        arguments=arguments
-                    ))
+
+                    if tool_call.function.name == "planner":
+                        if "plan" in arguments and isinstance(arguments["plan"], list):
+                            for plan in arguments["plan"]:
+                                if "tool_name" in plan and "parameters" in plan:
+                                    plan_items.append(
+                                        PlanItem(
+                                            tool_name=plan["tool_name"],
+                                            arguments=plan["parameters"]
+                                        )
+                                    )
+                    else:
+                        plan_items.append(
+                            PlanItem(
+                                tool_name=tool_call.function.name,
+                                arguments=arguments
+                            )
+                        )
         
         return plan_items
     
