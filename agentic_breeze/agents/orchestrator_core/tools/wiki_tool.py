@@ -3,6 +3,9 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from .api_tool import APIRequestTool
 import json
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class WikiSearchParams(BaseModel):
     """Wikipedia 搜尋工具的參數"""
@@ -27,6 +30,23 @@ class WikiTool:
     def search(self, query: str, limit: int = 10) -> str:
         """
         在 Wikipedia 上搜尋條目。適用於查找實體名稱或主題。
+
+        參數:
+            - query (str): 搜尋關鍵字或短語。
+            - limit (int): 回傳結果數量上限（1~50）。
+
+        返回:
+            - str: JSON 字串，格式如 {"status":"success","titles": [...], "raw": [...]} 或 {"status":"error","message": "..."}
+
+        使用範例:
+            >>> tool = WikiTool(api_request_tool=APIRequestTool())
+            >>> res = json.loads(tool.search("台灣"))
+            >>> res["status"]
+            'success'
+
+        可能觸發的錯誤:
+            - 上游 HTTP 錯誤（會以 {"status":"error","message": "..."} 回傳）
+            - 回應結構異常（以 error JSON 字串回傳）
         """
         params = {
             "action": "query",
@@ -42,9 +62,7 @@ class WikiTool:
             query_params=params,
             headers=self.headers
         )
-        # --- 添加除錯輸出 --- start
-        print(f"[DEBUG] wiki_search API 原始回應: {json.dumps(res['response_body'], indent=2, ensure_ascii=False)}")
-        # --- 添加除錯輸出 --- end
+        _logger.debug("wiki_search API 原始回應: %s", json.dumps(res['response_body'], indent=2, ensure_ascii=False))
         if res["error"]:
             return json.dumps({"status": "error", "message": res["error"]})
 
@@ -57,7 +75,23 @@ class WikiTool:
 
     def get_page_info(self, title: str) -> str:
         """
-        獲取指定頁面的詳細資訊，包括頁面 ID、標題、URL 等。
+        獲取指定頁面的詳細資訊，包括頁面 ID、標題與 URL。
+
+        參數:
+            - title (str): 頁面標題。
+
+        返回:
+            - str: JSON 字串，格式如 {"status":"success","page": {...}} 或 {"status":"error","message": "..."}
+
+        使用範例:
+            >>> tool = WikiTool(api_request_tool=APIRequestTool())
+            >>> res = json.loads(tool.get_page_info("台灣"))
+            >>> res.get("status") in {"success","error"}
+            True
+
+        可能觸發的錯誤:
+            - 上游 HTTP 錯誤（以 error JSON 字串回傳）
+            - 回應結構異常（以 error JSON 字串回傳）
         """
         params = {
             "action": "query",
@@ -99,6 +133,22 @@ class WikiTool:
     def get_full_content(self, title: str) -> str:
         """
         獲取指定頁面的完整原始維基文本內容。
+
+        參數:
+            - title (str): 頁面標題。
+
+        返回:
+            - str: JSON 字串，格式如 {"status":"success","content": "..."} 或 {"status":"error","message": "..."}
+
+        使用範例:
+            >>> tool = WikiTool(api_request_tool=APIRequestTool())
+            >>> res = json.loads(tool.get_full_content("台灣"))
+            >>> res.get("status") in {"success","error"}
+            True
+
+        可能觸發的錯誤:
+            - 上游 HTTP 錯誤（以 error JSON 字串回傳）
+            - 回應結構異常（以 error JSON 字串回傳）
         """
         params = {
             "action": "query",
@@ -116,9 +166,7 @@ class WikiTool:
             query_params=params,
             headers=self.headers
         )
-        # --- 添加除錯輸出 --- start
-        print(f"[DEBUG] wiki_get_full_content API 原始回應: {json.dumps(res['response_body'], indent=2, ensure_ascii=False)}")
-        # --- 添加除錯輸出 --- end
+        _logger.debug("wiki_get_full_content API 原始回應: %s", json.dumps(res['response_body'], indent=2, ensure_ascii=False))
         if res["error"]:
             return json.dumps({"status": "error", "message": res["error"]})
 
@@ -149,8 +197,24 @@ class WikiTool:
 
     def smart_content(self, query: str, limit: int = 2) -> str:
         """
-        根據關鍵字搜尋 Wikipedia，並回傳最佳匹配頁面的標題、URL 和解說。
-        獲取指定頁面的完整原始維基文本內容。
+        根據關鍵字搜尋 Wikipedia，彙整候選頁面的標題、URL 與原始內容。
+
+        參數:
+            - query (str): 搜尋關鍵字。
+            - limit (int): 搜尋候選數量。
+
+        返回:
+            - str: JSON 字串，格式如 {"status":"success","results": [{"title":"...","url":"...","content":"..."}, ...]}
+
+        使用範例:
+            >>> tool = WikiTool(api_request_tool=APIRequestTool())
+            >>> res = json.loads(tool.smart_content("台灣", limit=2))
+            >>> res.get("status") in {"success","error"}
+            True
+
+        可能觸發的錯誤:
+            - 上游 HTTP 錯誤（以 error JSON 字串回傳）
+            - 回應結構異常（以 error JSON 字串回傳）
         """
 
 
@@ -159,28 +223,30 @@ class WikiTool:
         # --- 添加除錯輸出 --- start
         search_results = json.loads(s)
         if search_results.get("status") == "success":
-            print(f"[DEBUG] wiki_smart_content 搜尋到的標題: {search_results.get("titles", [])}")
+            _logger.debug("wiki_smart_content 搜尋到的標題: %s", search_results.get('titles', []))
         # --- 添加除錯輸出 --- end
-        if json.loads(s).get("status") != "success":
+        if search_results.get("status") != "success":
             return s
-        titles: List[str] = json.loads(s).get("titles", [])
+        titles: List[str] = search_results.get("titles", [])
         if not titles:
             return json.dumps({"status": "error", "message": f"No result for: {query}"})
 
         all_contents = []
         for title in titles:
             info = self.get_page_info(title)
-            if json.loads(info).get("status") != "success":
+            info_obj = json.loads(info)
+            if info_obj.get("status") != "success":
                 # 如果某個條目獲取失敗，可以選擇跳過或記錄錯誤，這裡選擇跳過
                 continue
             content_text = self.get_full_content(title)
-            if json.loads(content_text).get("status") != "success":
+            content_obj = json.loads(content_text)
+            if content_obj.get("status") != "success":
                 continue
             
             all_contents.append({
-                "title": json.loads(info).get("page", {}).get("title"),
-                "url": json.loads(info).get("page", {}).get("fullurl"),
-                "content": json.loads(content_text).get("content")
+                "title": info_obj.get("page", {}).get("title"),
+                "url": info_obj.get("page", {}).get("fullurl"),
+                "content": content_obj.get("content")
             })
         
         if not all_contents:
