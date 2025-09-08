@@ -66,16 +66,6 @@ class ConversationManager:
         q = (question or "").strip()
         if not q:
             return False
-
-        keywords = [
-            "你是誰", "你的能力", "怎麼使用", "如何使用", "總結對話", "重述",
-            "解釋你的步驟", "為什麼這樣回答", "系統說明", "關於你", "幫我摘要",
-        ]
-        if any(k in q for k in keywords):
-            return True
-    
-        # 如果沒有工具可用，所有問題都歸類為元對話直接回答
-        # return True
         
         # 註解：原本的 LLM 判斷邏輯
         prompt = (

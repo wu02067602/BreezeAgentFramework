@@ -1,5 +1,5 @@
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional, Literal, Dict, Any, Tuple, Union
 import os
 

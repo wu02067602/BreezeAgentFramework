@@ -1,7 +1,6 @@
 
 import time
 import uuid
-import sys
 from typing import List, Dict, Any, Optional
 
 from openai import OpenAI

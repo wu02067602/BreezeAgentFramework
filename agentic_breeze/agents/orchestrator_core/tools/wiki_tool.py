@@ -1,5 +1,5 @@
 # wiki_tool.py
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 from pydantic import BaseModel, Field
 from .api_tool import APIRequestTool
 import json

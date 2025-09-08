@@ -5,7 +5,6 @@ Agentic Breeze CLI - Command Line Interface for Agentic Breeze Agent Framework
 import argparse
 import sys
 import os
-from pathlib import Path
 
 from agentic_breeze.agents.orchestrator import Orchestrator
 from agentic_breeze.llm.llm_client import LLMConnector
