@@ -2,24 +2,29 @@
 [![status](https://img.shields.io/badge/status-WIP-orange.svg?style=flat-square)](README.md) [![python](https://img.shields.io/badge/python-3.10%2B-blue.svg?style=flat-square)](README.md) [![license](https://img.shields.io/badge/license-TBD-lightgrey.svg?style=flat-square)](README.md)
 
 ### What is it? 它是什麼？
-他是一個 Python 套件，提供快速部屬 Breeze2 以及靈活切換市面上常見模型的功能。他的目標在於讓 LLM 佈署與使用變得極度簡單，並且包含最新的 LLM 相關技術（如：函數調用、RAG、工具規劃與並發、外顯思維鏈）。
+Breeze Agent Framework 是一個專為繁體中文設計的 AI 助理框架，提供快速部署 MediaTek Research Breeze2 模型以及靈活切換市面上常見模型的功能。框架的目標是讓 LLM 部署與使用變得極度簡單，並且包含最新的 LLM 相關技術。
 
-- 對齊 PRD，本框架預設支援以 vLLM 提供的 OpenAI 相容端點部署 Breeze 2（Llama-Breeze2-8B-Instruct），同時也可指向其他相容供應商或本地端點，只需調整 `.env` 的 `OPENAI_API_BASE_URL` 與 `MODEL_NAME`。
-- 內部採用 `LLMConnector` 封裝 OpenAI 相容 `/v1/chat/completions` 呼叫，`Orchestrator` 串接規劃/工具/綜合等核心模組以形成可組裝的流程。
+#### 核心特色
+- **多模型支援**：支援 Ollama、vLLM、OpenAI 相容端點
+- **CLI & Web 介面**：提供命令列聊天介面和 Gradio Web 介面
+- **繁體中文優化**：專為繁體中文場景設計和優化
+- **模組化架構**：可擴展的 Agent 架構，支援工具調用和複雜推理
+- **簡單部署**：一鍵啟動，無需複雜設定
 
 ---
 
 ### 目錄
 - [What is it? 它是什麼？](#what-is-it-它是什麼)
-- [主要特色](#主要特色)
 - [系統需求](#系統需求)
 - [安裝](#安裝)
 - [設定](#設定)
 - [快速開始](#快速開始)
 - [程式化使用](#程式化使用)
 - [工具擴充與 Schema](#工具擴充與-schema)
+- [主要特色](#主要特色)
+- [使用方式](#使用方式)
+- [疑難排解](#疑難排解)
 - [專案結構](#專案結構)
-- [Roadmap](#現況說明roadmap)
 - [貢獻指南](#貢獻指南)
 - [授權條款](#授權條款)
 
@@ -28,32 +33,75 @@
 ### 系統需求
 - Python 3.10 以上（建議 3.13）
 - Windows/macOS/Linux
-- vLLM 服務（用於 Breeze 2 相容端點）
+- vLLM 服務 or ollama(推薦)
 
 ---
 
 ### 安裝
 ```bash
-python -m venv .venv
-. .venv/Scripts/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
-pip install -r requirements.txt
+# 使用 uv 建立虛擬環境（推薦）
+uv venv ENV
+source ENV/bin/activate  # Windows: ENV\Scripts\activate
+
+# 安裝相依套件
+uv pip install -r requirements.txt
+
+# 安裝套件（開發模式）
+uv pip install -e .
 ```
 
 ### 設定
-於專案根目錄建立 `.env`：
+支援兩種部署方式：
+
+#### 1. 使用 Ollama（推薦）
 ```bash
-# OpenAI 相容端點（官方或其他供應商）
-LLM_API_KEY=你的金鑰
-OPENAI_API_BASE_URL=https://api.openai.com/v1
-MODEL_NAME=gpt-4o-mini
+# 安裝並啟動 Ollama
+ollama serve
+
+# 下載 Breeze2 模型
+ollama pull willqiu/Llama-Breeze2-8B-Instruct
+
+# 環境變數（可選，預設值）
+export HOST_TYPE=ollama
+```
+
+#### 2. 使用 vLLM
+```bash
+# 啟動 vLLM 服務
+vllm serve voidful/Llama-Breeze2-8B-Instruct-text-only --port 6667
+
+# 環境變數
+export HOST_TYPE=vllm
+```
+
+#### 3. 使用其他 OpenAI 相容端點
+```bash
+# 環境變數
+export HOST_TYPE=custom
+export API_KEY=你的金鑰
+export BASE_URL=https://api.openai.com/v1
 ```
 
 ---
 
 ### 快速開始
-互動 CLI：
+
+#### CLI 聊天介面
 ```bash
-python -m src.app
+# 啟動互動聊天
+breeze chat
+```
+
+#### CLI 指令參考
+```bash
+# 互動聊天模式
+breeze chat
+
+# Web 介面模式  
+breeze web
+
+# 顯示說明
+breeze --help
 ```
 
 ---
@@ -62,45 +110,45 @@ python -m src.app
 範例：直接在程式中使用 `Orchestrator` 進行單輪與多輪查詢。
 ```python
 import os
-from dotenv import load_dotenv
-load_dotenv()
+from agentic_breeze.agents.orchestrator import Orchestrator
+from agentic_breeze.llm.llm_client import LLMConnector
+from agentic_breeze.prompts.prompt_manager import PromptManager
+from agentic_breeze.agents.orchestrator_core.planning_manager import PlanningManager
+from agentic_breeze.agents.orchestrator_core.tool_executor import ToolExecutor
+from agentic_breeze.agents.orchestrator_core.query_rewriter import QueryRewriter
+from agentic_breeze.agents.orchestrator_core.conversation_manager import ConversationManager
+from agentic_breeze.agents.orchestrator_core.synthesis_generator import SynthesisGenerator
+from agentic_breeze.registry.tool_registry import ToolRegistry
 
-from src.agents.orchestrator import Orchestrator
-from src.llm.llm_client import LLMConnector
-from src.prompts.prompt_manager import PromptManager
-from src.agents.orchestrator_core.planning_manager import PlanningManager
-from src.agents.orchestrator_core.tool_executor import ToolExecutor
-from src.agents.orchestrator_core.query_rewriter import QueryRewriter
-from src.agents.orchestrator_core.conversation_manager import ConversationManager
-from src.agents.orchestrator_core.synthesis_generator import SynthesisGenerator
-from src.registry.tool_registry import ToolRegistry
-
+# 建立 LLM 連接器
 llm_connector = LLMConnector(
-    api_key=os.getenv("LLM_API_KEY"),
-    api_base_url=os.getenv("OPENAI_API_BASE_URL"),
-    default_model=os.getenv("MODEL_NAME")
+    host_type=os.getenv("HOST_TYPE", "ollama"),
+    timeout=int(os.getenv("TIMEOUT", "30")),
+    max_tokens=int(os.getenv("MAX_TOKENS", "1000")),
+    temperature=float(os.getenv("TEMPERATURE", "0.5"))
 )
+
+# 建立各模組
 prompt_manager = PromptManager()
+tool_registry = ToolRegistry()
+
 planning_manager = PlanningManager(
     llm_client=llm_connector,
-    tool_registry=ToolRegistry(),
+    tool_registry=tool_registry,
     prompt_manager=prompt_manager
 )
-tool_executor = ToolExecutor(
-    tool_registry=ToolRegistry(),
-)
+tool_executor = ToolExecutor(tool_registry=tool_registry)
 query_rewriter = QueryRewriter(
     llm_client=llm_connector,
     prompt_manager=prompt_manager
 )
-conversation_manager = ConversationManager(
-    llm_client=llm_connector
-)
+conversation_manager = ConversationManager(llm_client=llm_connector)
 synthesis_generator = SynthesisGenerator(
     llm_client=llm_connector,
     prompt_manager=prompt_manager
 )
 
+# 建立 Orchestrator
 orchestrator = Orchestrator(
     prompt_manager=prompt_manager,
     planning_manager=planning_manager,
@@ -110,10 +158,11 @@ orchestrator = Orchestrator(
     query_rewriter=query_rewriter
 )
 
-# 單輪
-print(orchestrator.aquery("今天天氣如何？"))
+# 單輪查詢
+answer = orchestrator.aquery("今天天氣如何？")
+print(answer)
 
-# 多輪（含歷史）
+# 多輪查詢（含歷史）
 history = []
 answer = orchestrator.aquery_with_history("今天適合出門嗎？", history)
 print(answer)
@@ -182,10 +231,10 @@ MODEL_NAME=gpt-4o-mini
 
 3) 執行互動 CLI
 ```bash
-python -m src.app
+breeze chat
 ```
-- 看到提示後直接輸入問題，輸入 `exit` 離開。
-- 若遇到匯入錯誤，請從專案根目錄執行 `python -m src.app`（避免直接 `python src/app.py`）。
+- 看到提示後直接輸入問題，輸入 `exit` 或 `quit` 離開。
+- 使用 `breeze web` 啟動 Web 介面。
 
 4) 工具啟用（可選） (To be continued)
 - 將你的工具 schema 由 `ToolRegistry.get_llm_tool_schemas()` 暴露；並在 `ToolRegistry.execute_tool()` 實作實際邏輯。
@@ -279,36 +328,99 @@ class ToolRegistry:
 ```
 
 5) 現況說明（Roadmap）
-- 目前：多輪對話、意圖重寫、基本規劃/工具框架、結果綜合已可運作。
-- 即將擴充：外顯 CoT、Path RAG/SQLite/API 工具的預設實作、Gradio 前端、RAG/Agent 設定與管理能力。
-- 詳細請見 `_vibe/PRD.md`。
+- 目前：多輪對話、意圖重寫、基本規劃/工具框架、結果綜合、SQLite/API 工具、Gradio 前端已可運作。
+- 即將擴充：外顯 CoT、Path RAG的預設實作、RAG/Agent 設定與管理能力。
+
+預計上線時間：
+- 外顯 CoT：9/19
+- 多層次 Agent 設計： 9/30
+- Path RAG： 10/15
+
+---
+
+### 疑難排解
+
+#### 常見問題
+
+1. **ModuleNotFoundError: No module named 'mtkresearch'**
+   ```bash
+   # 確保已安裝所有相依套件
+   uv pip install -r requirements.txt
+   uv pip install torchvision  # 如果需要
+   ```
+
+2. **'dict' object has no attribute 'choices'**
+   - 這是已知問題，正在修復中。請確保使用最新版本的代碼。
+
+3. **EOF when reading a line**
+   - 確保 Ollama 或 vLLM 服務正在運行
+   - 檢查模型是否正確下載/部署
+
+4. **連接錯誤**
+   ```bash
+   # 檢查 Ollama 狀態
+   ollama list
+   
+   # 檢查 vLLM 服務
+   curl http://localhost:6667/v1/models
+   ```
+
+#### 環境變數參考
+```bash
+# 主要設定
+HOST_TYPE=ollama          # ollama, vllm, custom
+TIMEOUT=30               # API 超時秒數
+MAX_TOKENS=1000          # 最大生成 tokens
+TEMPERATURE=0.5          # 生成溫度
+
+# 自訂端點（HOST_TYPE=custom 時需要）
+API_KEY=your_api_key
+BASE_URL=https://api.openai.com/v1
+```
 
 ---
 
 ### 專案結構
 ```text
-src/
-  app.py
+agentic_breeze/
+  __init__.py
+  cli/
+    __init__.py
+    main.py                 # CLI 主程式
   agents/
-    orchestrator.py
+    __init__.py
+    orchestrator.py         # 主要協調器
     orchestrator_core/
-      planning_manager.py
-      tool_executor.py
-      query_rewriter.py
-      conversation_manager.py
-      synthesis_generator.py
-  llm/llm_client.py
+      __init__.py
+      planning_manager.py     # 規劃管理器
+      tool_executor.py        # 工具執行器
+      query_rewriter.py       # 查詢重寫器
+      conversation_manager.py # 對話管理器
+      synthesis_generator.py  # 結果綜合器
+      modle/
+        execution_plan.py     # 規劃結構定義
+      tools/
+        api_tool.py
+        sqlite_tool.py
+        weather.py
+        wiki_tool.py
+  llm/
+    llm_client.py            # LLM 客戶端
+    breeze_client.py         # Breeze 專用客戶端
   prompts/
-    prompt_manager.py
-    prompt.json
+    __init__.py
+    prompt_manager.py        # 提示管理器
+    prompt.json              # 提示模板
   registry/
-    tool_registry.py
+    __init__.py
+    tool_registry.py         # 工具註冊器
 ```
 
 ---
 
 ### 貢獻指南
-歡迎 Issue 與 PR！建議流程：
+歡迎 Issue 與 PR！
+建議流程：
 1. 建立 Issue 描述背景與需求
 2. Fork 並建立功能分支
 3. 開發與撰寫/更新對應文件

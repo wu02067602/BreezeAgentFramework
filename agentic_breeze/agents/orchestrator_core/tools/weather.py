@@ -1,8 +1,10 @@
 from typing import Dict, Any, Optional
 from .api_tool import APIRequestTool
 
-import certifi, httpx
 import os
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class CWAWeatherTool:
     """
@@ -10,22 +12,55 @@ class CWAWeatherTool:
     它使用 APIRequestTool 內部發送 HTTP 請求。
     """
     def __init__(self, api_request_tool: APIRequestTool):
+        """
+        初始化 CWAWeatherTool。
+
+        參數:
+            - api_request_tool (APIRequestTool): 內部使用的 HTTP 請求工具。
+
+        返回:
+            - None
+
+        使用範例:
+            >>> from agentic_breeze.agents.orchestrator_core.tools.api_tool import APIRequestTool
+            >>> weather = CWAWeatherTool(api_request_tool=APIRequestTool())
+
+        可能觸發的錯誤:
+            - 無（錯誤通常在請求時回傳於結果字典）
+        """
         self.api_request_tool = api_request_tool
         self.base_url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
-        # 從環境變數獲取 CWA API Key，或使用預設值
-        self.cwa_api_key = os.getenv("CWA_API_KEY", "CWA-A0D6B598-1E64-4CC2-8392-674E27849CF1")
+        # 從環境變數獲取 CWA API Key
+        self.cwa_api_key = os.getenv("CWA_API_KEY")
 
     def get_national_forecast(self, dataset_id: str = "F-C0032-001", location_name: Optional[str] = None) -> Dict[str, Any]:
         """
         獲取中央氣象署 (CWA) 的全國天氣預報資料，可選擇篩選特定地點。
 
-        Args:
-            dataset_id (str): CWA 資料集的 ID，預設為 "F-C0032-001" (36 小時天氣預報)。
-            location_name (Optional[str]): 可選的地點名稱，如果提供，將只回傳該地點的預報。
+        參數:
+            - dataset_id (str): CWA 資料集 ID，預設為 "F-C0032-001"（36 小時天氣預報）。
+            - location_name (Optional[str]): 指定地點名稱（若提供，僅回傳該地點）。
 
-        Returns:
-            Dict[str, Any]: 包含天氣預報資料的字典，或錯誤訊息。
+        返回:
+            - Dict[str, Any]:
+              - status (str): "success" 或 "error"。
+              - forecast (Optional[List|Dict]): 成功時的預報資料（陣列或單一地點字典）。
+              - message/error (Optional[str]): 錯誤時的訊息（為了相容性保留 error 鍵）。
+
+        使用範例:
+            >>> weather = CWAWeatherTool(api_request_tool=APIRequestTool())
+            >>> out = weather.get_national_forecast(location_name="臺北市")
+            >>> out.get("status") in {"success", "error"}
+            True
+
+        可能觸發的錯誤:
+            - 缺少 CWA_API_KEY（以 {"status":"error","message":...} 回傳）
+            - 上游 HTTP 錯誤或資料格式異常（以 error 結構回傳）
         """
+        if not self.cwa_api_key:
+            msg = "Missing environment variable CWA_API_KEY"
+            _logger.error(msg)
+            return {"status": "error", "message": msg, "error": msg}
         endpoint = f"{self.base_url}/{dataset_id}"
         query_params = {
             "Authorization": self.cwa_api_key,
@@ -43,7 +78,8 @@ class CWAWeatherTool:
         )
 
         if response_data["error"]:
-            return {"error": f"Failed to retrieve CWA forecast: {response_data['error']}"}
+            err = f"Failed to retrieve CWA forecast: {response_data['error']}"
+            return {"status": "error", "message": err, "error": err}
         
         # 假設 CWA API 的回應結構，並進行簡化
         response_body = response_data["response_body"]
@@ -65,11 +101,11 @@ class CWAWeatherTool:
                 max_t = next((e for e in weather_elements if e.get("elementName") == "MaxT"), None)
 
                 current_forecast = {"locationName": current_location_name}
-                if wx and wx["time"]:
+                if wx and wx.get("time"):
                     current_forecast["weather_phenomenon"] = wx["time"][0].get("parameter", {}).get("parameterName")
-                if min_t and min_t["time"]:
+                if min_t and min_t.get("time"):
                     current_forecast["min_temperature"] = min_t["time"][0].get("parameter", {}).get("parameterName")
-                if max_t and max_t["time"]:
+                if max_t and max_t.get("time"):
                     current_forecast["max_temperature"] = max_t["time"][0].get("parameter", {}).get("parameterName")
                 simplified_forecast.append(current_forecast)
             
@@ -80,4 +116,5 @@ class CWAWeatherTool:
             else:
                 return {"status": "success", "forecast": simplified_forecast}
         else:
-            return {"error": f"CWA forecast data not available or unexpected response format."}
+            msg = "CWA forecast data not available or unexpected response format."
+            return {"status": "error", "message": msg, "error": msg}
